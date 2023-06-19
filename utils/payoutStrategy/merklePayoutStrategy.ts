@@ -1,0 +1,197 @@
+/* eslint-disable */
+import { BigNumber, ethers, Signer } from 'ethers'
+import { useEffect, useState } from 'react'
+// import dist from "tailwind-styled-components";
+import { merklePayoutStrategyFactoryContract, merklePayoutStrategyImplementationContract } from '../contracts'
+import { fetchMatchingDistribution } from '../round'
+import { MatchingStatsData } from '../types'
+import { ChainId, generateMerkleTree } from '../utils'
+
+/**
+ * Deploys a QFVotingStrategy contract by invoking the
+ * create on QuadraticFundingVotingStrategyFactory contract
+ *
+ * @param signerOrProvider
+ * @returns
+ */
+export const deployMerklePayoutStrategyContract = async (
+  signerOrProvider: Signer
+): Promise<{ payoutContractAddress: string }> => {
+  try {
+    const chainId = await signerOrProvider.getChainId()
+
+    const _merklePayoutStrategyFactoryContract = merklePayoutStrategyFactoryContract(chainId)
+
+    const payoutStrategyFactory = new ethers.Contract(
+      _merklePayoutStrategyFactoryContract.address!,
+      _merklePayoutStrategyFactoryContract.abi,
+      signerOrProvider
+    )
+
+    // Deploy a new MerklePayoutStrategy contract
+    const tx = await payoutStrategyFactory.create()
+
+    const receipt = await tx.wait()
+
+    let payoutContractAddress
+
+    if (receipt.events) {
+      const event = receipt.events.find((e: { event: string }) => e.event === 'PayoutContractCreated')
+      if (event && event.args) {
+        payoutContractAddress = event.args.payoutContractAddress
+      }
+    } else {
+      throw new Error('No PayoutContractCreated event')
+    }
+
+    console.log('✅ Merkle Payout Transaction hash: ', tx.hash)
+    console.log('✅ Merkle Payout Strategy address: ', payoutContractAddress)
+
+    return { payoutContractAddress }
+  } catch (error) {
+    console.error('deployMerklePayoutStrategyContract', error)
+    throw new Error('Unable to deploy merkle payout strategy contract')
+  }
+}
+
+interface UpdateDistributionProps {
+  payoutStrategy: string
+  encodedDistribution: string
+  signerOrProvider: Signer
+}
+
+export async function updateDistributionToContract({
+  payoutStrategy,
+  encodedDistribution,
+  signerOrProvider,
+}: UpdateDistributionProps) {
+  try {
+    const merklePayoutStrategyImplementation = new ethers.Contract(
+      payoutStrategy,
+      merklePayoutStrategyImplementationContract.abi,
+      signerOrProvider
+    )
+
+    const tx = await merklePayoutStrategyImplementation.updateDistribution(encodedDistribution)
+    const receipt = await tx.wait()
+
+    console.log('✅ Transaction hash: ', tx.hash)
+    const blockNumber = receipt.blockNumber
+    return {
+      transactionBlockNumber: blockNumber,
+    }
+  } catch (error) {
+    console.error('updateDistributionToContract', error)
+    throw new Error('Unable to finalize Round')
+  }
+}
+
+interface GroupedProjects {
+  paid: MatchingStatsData[]
+  unpaid: MatchingStatsData[]
+}
+
+/**
+ * Distributes funds to projects using merkle tree
+ *
+ * @param payoutStrategy
+ * @param allProjects
+ * @param projectIdsToBePaid
+ * @param signerOrProvider
+ * @returns
+ */
+export const batchDistributeFunds = async (
+  payoutStrategy: string,
+  allProjects: MatchingStatsData[],
+  projectIdsToBePaid: string[],
+  signerOrProvider: Signer
+) => {
+  try {
+    const merklePayoutStrategyImplementation = new ethers.Contract(
+      payoutStrategy,
+      merklePayoutStrategyImplementationContract.abi,
+      signerOrProvider
+    )
+
+    // Generate merkle tree
+    const { tree, matchingResults } = generateMerkleTree(allProjects)
+
+    // Filter projects to be paid from matching results
+    const projectsToBePaid = matchingResults.filter((project) => projectIdsToBePaid.includes(project.projectId))
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const projectsWithMerkleProof: any[] = []
+
+    projectsToBePaid.forEach((project) => {
+      const distribution: [number, string, BigNumber, string] = [
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        project.index!,
+        project.projectPayoutAddress,
+        project.matchAmountInToken,
+        project.projectId,
+      ]
+
+      // Generate merkle proof
+      const validMerkleProof = tree.getProof(distribution)
+
+      projectsWithMerkleProof.push({
+        index: distribution[0],
+        grantee: distribution[1],
+        amount: distribution[2],
+        merkleProof: validMerkleProof,
+        projectId: distribution[3],
+      })
+    })
+
+    const tx = await merklePayoutStrategyImplementation['payout((uint256,address,uint256,bytes32[],bytes32)[])'](
+      projectsWithMerkleProof
+    )
+
+    const receipt = await tx.wait()
+
+    console.log('✅ Transaction hash: ', tx.hash)
+    const blockNumber = receipt.blockNumber
+    return {
+      transactionBlockNumber: blockNumber,
+      error: undefined,
+    }
+  } catch (error) {
+    console.error('batchDistributeFunds', error)
+
+    return {
+      transactionBlockNumber: 0,
+      error,
+    }
+  }
+}
+
+/**
+ * Reclaims funds from contract to provided address
+ *
+ * @param payoutStrategy
+ * @param signerOrProvider
+ * @param recipient
+ * @returns
+ */
+export async function reclaimFundsFromContract(payoutStrategy: string, signerOrProvider: Signer, recipient: string) {
+  try {
+    const merklePayoutStrategyImplementation = new ethers.Contract(
+      payoutStrategy,
+      merklePayoutStrategyImplementationContract.abi,
+      signerOrProvider
+    )
+
+    const tx = await merklePayoutStrategyImplementation.withdrawFunds(recipient)
+
+    const receipt = await tx.wait()
+
+    console.log('✅ Transaction hash: ', tx.hash)
+    const blockNumber = receipt.blockNumber
+    return {
+      transactionBlockNumber: blockNumber,
+    }
+  } catch (error) {
+    console.error('reclaimFundsFromContract', error)
+    throw new Error('Unable to reclaim funds from round')
+  }
+}

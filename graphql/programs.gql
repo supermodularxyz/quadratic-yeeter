@@ -1,0 +1,12 @@
+query fetchMyPrograms($address: String!) {
+  programAccounts(where: { address: $address }) {
+    id
+    program {
+      id
+      metaPtr {
+        protocol
+        pointer
+      }
+    }
+  }
+}

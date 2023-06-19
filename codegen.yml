@@ -1,0 +1,38 @@
+overwrite: true
+config:
+  namingConvention:
+    typeNames: change-case-all#pascalCase
+    enumValues: change-case-all#upperCase
+    transformUnderscore: true
+  useTypeImports: true
+generates:
+  gql/types.generated.ts:
+    schema: 'https://api.studio.thegraph.com/query/32278/allo-grants-graph/v0.0.3'
+    documents: 'graphql/**/*.gql'
+    plugins:
+      typescript:
+        scalars:
+          BigDecimal: number
+          BigInt: number
+          Bytes: number
+        enumsAsTypes: false
+        declarationKind:
+          type: interface
+          input: interface
+      typescript-operations:
+        avoidOptionals: false
+        preResolveTypes: false
+        operationResultSuffix: Result
+        dedupeOperationSuffix: true
+        exportFragmentSpreadSubTypes: true
+      typescript-react-apollo:
+        addDocBlocks: true
+        dedupeOperationSuffix: true
+        documentMode: graphQLTag
+        operationResultSuffix: Result
+        pureMagicComment: true
+        withHOC: false
+        withHooks: true
+        withMutationFn: false
+        withResultType: false
+        withMutationOptionsType: false
