@@ -3,7 +3,7 @@ import { MatchingStatsData, Round } from './types'
 import { fetchFromIPFS, payoutTokens } from './utils'
 import { BigNumber, ethers, utils } from 'ethers'
 import { Web3Provider } from '@ethersproject/providers'
-import deployEvents, { delay } from './deployEvents'
+import deployEvents, { delay, formatAddress } from './deployEvents'
 import {
   merklePayoutStrategyImplementationContract,
   roundFactoryContract,
@@ -106,7 +106,11 @@ export async function deployRoundContract(
     console.log('✅ Round address: ', roundAddress)
 
     deployEvents({
-      Round: { status: DEPLOYSTATUS.COMPLETED, message: `Round deployed at ${roundAddress}`, data: { roundAddress } },
+      Round: {
+        status: DEPLOYSTATUS.COMPLETED,
+        message: `Round deployed at ${formatAddress(roundAddress)}`,
+        data: { roundAddress },
+      },
     })
 
     await delay(1000)
