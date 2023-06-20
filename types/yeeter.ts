@@ -22,6 +22,14 @@ export const formSchema = z.object({
     message: 'Please provide a round name.',
   }),
   program: z.string().default(''),
+  description: z.string().default(''),
+  support: z.string().email().optional().or(z.literal('')),
+  sybilDefense: z.boolean().default(false),
+  requirements: z
+    .object({
+      requirement: z.string().default(''),
+    })
+    .array(),
   applicationDate: z.object({
     from: z.date(),
     to: z.date(),
@@ -48,6 +56,7 @@ export type FormSchema = z.infer<typeof formSchema>
 export interface FormSchemaWithConfig extends FormSchema {
   config: {
     useBurner: boolean
+    roundId?: string
   }
 }
 

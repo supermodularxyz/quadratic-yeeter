@@ -8,7 +8,7 @@ import { deployQFVotingContract } from './votingStrategy/qfVotingStrategy'
 import { deployMerklePayoutStrategyContract } from './payoutStrategy/merklePayoutStrategy'
 import { deployRoundContract } from './round'
 import { waitForSubgraphSyncTo } from './subgraph'
-import deployEvents, { delay } from './deployEvents'
+import deployEvents, { delay, formatAddress } from './deployEvents'
 import { DEPLOYSTATUS } from '@/types/yeeter'
 
 interface DeployProgramContractProps {
@@ -77,7 +77,9 @@ export const _createProgram = async ({
       transactionBlockNumber
     )
 
-    deployEvents({ Program: { status: DEPLOYSTATUS.COMPLETED, message: `New program deployed to ${programAddress}` } })
+    deployEvents({
+      Program: { status: DEPLOYSTATUS.COMPLETED, message: `New program deployed to ${formatAddress(programAddress)}` },
+    })
 
     await delay(1000)
 
@@ -238,7 +240,10 @@ async function handleDeployVotingContract(signerOrProvider: Signer): Promise<str
     console.log(ProgressStatus.IS_SUCCESS)
 
     deployEvents({
-      Voting: { status: DEPLOYSTATUS.COMPLETED, message: `Voting contract deployed at ${votingContractAddress}` },
+      Voting: {
+        status: DEPLOYSTATUS.COMPLETED,
+        message: `Voting contract deployed at ${formatAddress(votingContractAddress)}`,
+      },
     })
 
     await delay(1000)
@@ -263,7 +268,10 @@ async function handleDeployPayoutContract(signerOrProvider: Signer): Promise<str
     console.log(ProgressStatus.IS_SUCCESS)
 
     deployEvents({
-      Payout: { status: DEPLOYSTATUS.COMPLETED, message: `Payout contract deployed at ${payoutContractAddress}` },
+      Payout: {
+        status: DEPLOYSTATUS.COMPLETED,
+        message: `Payout contract deployed at ${formatAddress(payoutContractAddress)}`,
+      },
     })
 
     await delay(1000)
@@ -423,7 +431,9 @@ export const deployQFRound = async ({
 }: DeployQFRoundParams) => {
   try {
     if (programAddress) {
-      deployEvents({ Program: { status: DEPLOYSTATUS.COMPLETED, message: `Using existing program ${programAddress}` } })
+      deployEvents({
+        Program: { status: DEPLOYSTATUS.COMPLETED, message: `Using existing program ${formatAddress(programAddress)}` },
+      })
 
       await delay(1000)
     }

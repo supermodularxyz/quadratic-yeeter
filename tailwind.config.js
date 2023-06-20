@@ -12,14 +12,20 @@ module.exports = {
     },
     extend: {
       colors: {
+        'brand-bg': '#57706A',
+        'brand-dark': '#445E57',
+        'brand-green': '#32F0BE',
+        'brand-outline': '#8EB7AD',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
+          // DEFAULT: 'hsl(var(--primary))',
+          // foreground: 'hsl(var(--primary-foreground))',
+          DEFAULT: '#32F0BE',
+          foreground: '#57706A',
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
@@ -31,6 +37,7 @@ module.exports = {
         },
         muted: {
           DEFAULT: 'hsl(var(--muted))',
+          // foreground: 'hsl(var(--muted-foreground))',
           foreground: 'hsl(var(--muted-foreground))',
         },
         accent: {

@@ -1,100 +1,31 @@
-import { useState, useEffect } from 'react'
-import { Inter } from 'next/font/google'
-import { ethers, Signer } from 'ethers'
-import { useAccount, useSigner, useProvider } from 'wagmi';
-import { deployQFRound } from '@/utils/deployer'
-import { BurnerWallet, FormSchemaWithConfig } from '@/types/yeeter';
-import { Edit, Preview, Progress } from '@/views';
-const inter = Inter({ subsets: ['latin'] })
-
-const defaultBurnerWallet = {
-  keys: "",
-  address: "" as `0x${string}`
-}
-
-const views = [Edit, Preview, Progress]
+import { Button } from "@/components/ui/button";
+import { NextPage } from "next";
+import Link from "next/link";
 
 
-export default function Home() {
-  const [formData, setFormData] = useState<FormSchemaWithConfig>()
-  const [burnerWallet, setBurnerWallet] = useState<BurnerWallet>(defaultBurnerWallet)
-  const [viewIndex, setViewIndex] = useState<number>(0)
-  const { address } = useAccount()
-  const { data: signer } = useSigner()
-  const provider = useProvider()
-
-  const setupBurnerWallet = () => {
-    // look for wallet in localStorage
-    let _burner = JSON.parse(localStorage.getItem('burner') || "{}")
-
-    // create one if none exists and add to localStorage
-    if (!_burner.keys) {
-      const wallet = ethers.Wallet.createRandom()
-      _burner = { keys: wallet.privateKey, address: wallet.address }
-      localStorage.setItem("burner", JSON.stringify(_burner))
-    }
-
-    // set the key and address
-    setBurnerWallet(_burner)
-  }
-
-  useEffect(() => {
-    setupBurnerWallet()
-  }, [])
-
-  const toggleNextView = (valuesWithConfig?: FormSchemaWithConfig) => {
-    if (valuesWithConfig) {
-      setFormData(valuesWithConfig)
-    }
-
-    const nextView = viewIndex + 1
-
-    setViewIndex(nextView)
-
-    if (nextView === 2) {
-      handleYeet()
-    }
-  }
-
-  const handleYeet = async () => {
-    if (formData) {
-      // setup signer here
-      let deployerSigner = signer
-
-      if (formData.config.useBurner && formData.program === "" && burnerWallet) {
-        deployerSigner = new ethers.Wallet(burnerWallet.keys, provider)
-      }
-
-      const round = {
-        roundMetadata: {
-          name: formData.name,
-          roundType: 'private',
-          quadraticFundingConfig: {
-            matchingFundsAvailable: formData.amount,
-            matchingCap: false
-          }
-        },
-        roundStartTime: formData.roundDate.from,
-        roundEndTime: formData.roundDate.to,
-        applicationsStartTime: formData.applicationDate.from,
-        applicationsEndTime: formData.applicationDate.to,
-        token: ethers.constants.AddressZero,
-        operatorWallets: [address as string],
-        approvedProjects: [],
-        finalized: false
-      }
-
-      await deployQFRound({ programName: formData.name, programAddress: formData.program, operatorWallets: round.operatorWallets, _round: round, signer: deployerSigner as Signer })
-    }
-  }
-
-  const CurrentView = views[viewIndex]
-
+const Home: NextPage = () => {
   return (
     <main
-      className={`flex mt-36 flex-col max-w-sm mx-auto items-center justify-center ${inter.className}`}
+      className={`flex mt-56 flex-col max-w-md mx-auto items-center justify-center`}
     >
-      <CurrentView data={formData} burnerAddress={burnerWallet.address} toggleNext={toggleNextView} />
+      <div className='flex flex-1 flex-col p-6 py-10 rounded-xl bg-brand-dark'>
+        <div className="mb-8 text-left">
+          <h1 className='text-4xl font-bold text-brand-green'>Yeet</h1>
+          <h4 className="text-white italic mt-1">(v.) To throw something very very hard very very fast</h4>
+        </div>
+        <div className="w-full mb-4 rounded-md text-white">
+          <div className='mb-4 italic'>
+            This tool is a Quadratic Yeeter.  It&apos;s a way to launch a <a href="https://round-manager.gitcoin.co/" className="text-brand-green" target="_blank">QF Grants Round</a> in only a couple clicks (as compared to the dozens of clicks required in the default Gitcoin Grants Stack flow)
+          </div>
+        </div>
+        <div className="flex flex-1 justify-center items-center">
+          <Button asChild className="w-[200px] rounded-full py-4">
+            <Link href="/yeet">Yeet A Round</Link>
+          </Button>
+        </div>
+      </div>
     </main>
   )
 }
+
+export default Home
