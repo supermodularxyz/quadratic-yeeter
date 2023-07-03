@@ -33,7 +33,7 @@ const testnetChains = () => {
     testnet: true,
   }
 
-  return [chain.goerli, chain.hardhat, fantomTestnet]
+  return [chain.goerli, chain.hardhat, chain.polygonMumbai, fantomTestnet]
 }
 
 const mainnetChains = () => {

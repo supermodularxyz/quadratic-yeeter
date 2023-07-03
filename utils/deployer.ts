@@ -67,6 +67,8 @@ export const _createProgram = async ({
     deployEvents({ Program: { status: DEPLOYSTATUS.WAITING, message: 'Deploying new program contract' } })
     const { transactionBlockNumber, programAddress } = await deployContract(metadata, operatorWallets, signerOrProvider)
 
+    console.log({ programAddress })
+
     deployEvents({
       Program: { status: DEPLOYSTATUS.TX, message: `Deployed new program contract, awaiting subgraph indexing` },
     })

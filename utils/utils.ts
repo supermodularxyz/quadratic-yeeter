@@ -16,6 +16,7 @@ export enum ChainId {
   FANTOM_MAINNET_CHAIN_ID = 250,
   FANTOM_TESTNET_CHAIN_ID = 4002,
   HARDHAT_CHAIN_ID = 31337,
+  MUMBAI = 80001,
 }
 
 // NB: number keys are coerced into strings for JS object keys
@@ -475,6 +476,9 @@ export const getTxExplorerForContract = (chainId: ChainId, contractAddress: stri
 
     case ChainId.MAINNET:
       return `https://etherscan.io/address/${contractAddress}`
+
+    case ChainId.MUMBAI:
+      return `https://mumbai.polygonscan.com/address/${contractAddress}`
 
     default:
       return `https://goerli.etherscan.io/address/${contractAddress}`

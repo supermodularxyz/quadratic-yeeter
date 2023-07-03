@@ -4,6 +4,7 @@ export enum ChainId {
   OPTIMISM_MAINNET_CHAIN_ID = 10,
   FANTOM_MAINNET_CHAIN_ID = 250,
   FANTOM_TESTNET_CHAIN_ID = 4002,
+  MUMBAI = 80001,
 }
 
 const getGraphQLEndpoint = async (chainId: ChainId) => {
@@ -54,6 +55,10 @@ export const graphql_fetch = async (
 }
 
 export async function getCurrentSubgraphBlockNumber(chainId: number): Promise<number> {
+  if (chainId === ChainId.MUMBAI || chainId === 31337) {
+    return 44502505900
+  }
+
   const res = await graphql_fetch(
     `
       {

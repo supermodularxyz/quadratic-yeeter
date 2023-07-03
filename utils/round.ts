@@ -24,6 +24,9 @@ export async function deployRoundContract(
 ): Promise<{ transactionBlockNumber: number }> {
   try {
     const chainId = await signerOrProvider.getChainId()
+    const flat = [31337, 80001].includes(chainId)
+
+    console.log({ flat })
 
     deployEvents({ Round: { status: DEPLOYSTATUS.WAITING, message: `Initializing round contract deployment` } })
 
@@ -59,32 +62,45 @@ export async function deployRoundContract(
     const parsedTokenAmount = utils.parseUnits(tokenAmount.toString(), token.decimal)
 
     // encode input parameters
-    const params = [
-      initAddresses,
-      initRoundTimes,
-      parsedTokenAmount,
-      round.token,
-      round.feesPercentage || 0,
-      round.feesAddress || ethers.constants.AddressZero,
-      initMetaPtr,
-      initRoles,
-    ]
+    const params = flat
+      ? [...initAddresses, ...initRoundTimes, round.token, ...initMetaPtr, ...initRoles]
+      : [
+          initAddresses,
+          initRoundTimes,
+          parsedTokenAmount,
+          round.token,
+          round.feesPercentage || 0,
+          round.feesAddress || ethers.constants.AddressZero,
+          initMetaPtr,
+          initRoles,
+        ]
 
-    console.log({ token, parsedTokenAmount, tokenAmount, params })
+    const encodeType = flat
+      ? [
+          'address',
+          'address',
+          'uint256',
+          'uint256',
+          'uint256',
+          'uint256',
+          'address',
+          'tuple(uint256 protocol, string pointer)',
+          'tuple(uint256 protocol, string pointer)',
+          'address[]',
+          'address[]',
+        ]
+      : [
+          'tuple(address votingStrategy, address payoutStrategy)',
+          'tuple(uint256 applicationsStartTime, uint256 applicationsEndTime, uint256 roundStartTime, uint256 roundEndTime)',
+          'uint256',
+          'address',
+          'uint8',
+          'address',
+          'tuple(tuple(uint256 protocol, string pointer), tuple(uint256 protocol, string pointer))',
+          'tuple(address[] adminRoles, address[] roundOperators)',
+        ]
 
-    const encodedParameters = ethers.utils.defaultAbiCoder.encode(
-      [
-        'tuple(address votingStrategy, address payoutStrategy)',
-        'tuple(uint256 applicationsStartTime, uint256 applicationsEndTime, uint256 roundStartTime, uint256 roundEndTime)',
-        'uint256',
-        'address',
-        'uint8',
-        'address',
-        'tuple(tuple(uint256 protocol, string pointer), tuple(uint256 protocol, string pointer))',
-        'tuple(address[] adminRoles, address[] roundOperators)',
-      ],
-      params
-    )
+    const encodedParameters = ethers.utils.defaultAbiCoder.encode(encodeType, params)
 
     deployEvents({ Round: { status: DEPLOYSTATUS.TX, message: `Deploying round contract` } })
 
